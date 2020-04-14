@@ -1,0 +1,477 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+	<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+	<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+	<title>minishowcase manager</title>
+</head>
+
+<body>
+	
+	<div id="admin-app" class="container">
+		
+		<admin-login :logged="logged" v-if="!logged.in"></admin-login>
+		
+		<div v-if="logged">
+			
+			<div class="admin-header">
+				<h1><a href="../">minishowcase</a> manager</h1>
+			</div>
+	
+			<div class="settings-wrapper">
+						
+				<div class="row">
+						
+					<div class="col-md-2">
+					
+						<!-- galleries -->
+						<admin-menu :section="section" :galleries="galleries" :modules="modules"></admin-menu>
+					
+					</div>
+					
+					<div class="admin-manager showcase col-md-10">
+						
+						<!-- settings -->
+						<admin-settings :settings="settings" :galleries="galleries"></admin-settings>
+						
+						<!-- galleries -->
+						<admin-galleries :galleries="galleries" :gallery="gallery" :photos="photos"></admin-galleries>
+						
+						<!-- thumbnail creator -->
+						<admin-thumbnails :images="thumb_images" :image="thumb_image" :message="thumb_message"></admin-thumbnails>
+						
+					</div>
+									
+					<!-- image viewer -->
+					<admin-image-viewer :image="image" :viewer="viewer" v-show="viewer"></admin-image-viewer>
+		
+					<admin-message v-if="msg.type!==''" :msg="msg"></admin-message>
+					
+				</div>
+				
+			</div>
+			
+			<div class="admin-footer footer">
+				<p>powered by minishowcase admin</p>
+			</div>
+			
+			<div class="admin-loader">
+				<h1><i class="glyphicon glyphicon-cog gi-spin"></i> Loading...</h1>
+			</div>
+			
+		</div>
+		
+	</div>
+	
+	<!--
+	***********************
+		templates 
+	*********************** 
+	-->
+	
+	<!--
+		admin login form template 
+	-->
+	<template id="admin-login">
+		<div id="msc-login" class="overpanel settings container-fluid">
+	
+			<!-- create password -->
+			<div v-if="!logged.file" class="login-box settings-wrapper">
+				<h2>Create password</h2>
+<!--
+				<div class="setting form-group">
+					<label for="username" class="control-label">Username</label>
+					<input id="username" class="form-control" type="text" v-model="username">
+				</div>
+-->
+				<div class="setting form-group">
+					<label for="password" class="control-label">Password</label>
+					<input id="password" class="form-control" type="password" v-model="password">
+				</div>
+				<div class="setting form-group">
+					<button type="button" class="btn btn-default btn-main btn-admin-save col-md-12" @click="savePassword(password)">Log in</button>
+				</div>
+			</div>
+		
+			<!-- log in -->
+			<div v-if="logged.file && !logged.in" class="login-box settings-wrapper">
+				<h2>Login</h2>
+<!--
+				<div class="setting form-group">
+					<label for="username" class="control-label">Username</label>
+					<input id="username" class="form-control" type="text" v-model="username">
+				</div>
+-->
+				<div class="setting form-group">
+					<label for="password" class="control-label">Password</label>
+					<input id="password" class="form-control" type="password" v-model="password">
+				</div>
+				<div class="setting form-group">
+					<button type="button" class="btn btn-default btn-main btn-admin-save col-md-12" @click="logIn(password)">Log in</button>
+				</div>
+<!-- 				<a href="javascript:void(0);" @click="logIn(password)">logged</a> -->
+			</div>
+			
+		</div>
+	</template>
+	
+	
+	<!--
+		admin menu template 
+	-->
+	<template id="admin-menu">
+		<div id="msc-admin-menu" class="menu">
+			<ul class="admin-menu-list">
+				<li class="admin-menu-list-item">
+					<a href="#settings" v-bind:class="{selected:section=='settings'}" @click="showSection('settings');">Settings</a>
+				</li>
+				<li v-if="modules.galleries" class="admin-menu-list-item">
+					<a href="#galleries" v-bind:class="{selected:section=='galleries'}" @click="showSection('galleries');">Galleries</a>
+				</li>
+				<li v-if="modules.thumbnails" class="admin-menu-list-item">
+					<a href="#thumbnails" v-bind:class="{selected:section=='thumbnails'}" @click="showSection('thumbnails');">Thumbnails</a>
+				</li>
+			</ul>
+		</div>
+	</template>
+	
+	<!--
+		admin settings template 
+	-->
+	<template id="admin-settings">
+		<div id="msc-admin-settings" class="settings admin-hidden">
+			<div class="header">
+				<h2>Settings
+					<!-- save button, only in case it won't auto-save-->
+					<button type="button" class="btn btn-default btn-main btn-right btn-admin-save" @click="saveSettings">Save Changes</button>
+				</h2>
+			</div>
+			<div class="settings-wrapper">
+				
+				<div class="setting-box form-group row" v-for="(setting, index) in settings" v-if="setting.status!=='inactive'" v-bind:class="{hidden:setting.status=='hidden'}">
+					
+					<div class="setting-label col-md-5">
+						<label v-bind:for="index" class="control-label">{{ setting.name.replace(/_/gi,' ').replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}) }}</label>
+						<div class="setting-desc">
+							<div class="description">{{ setting.desc }}</div>
+						</div>
+					</div>
+					
+					<div class="setting-field col-md-6 col-md-offset-1">
+						<!-- text field -->
+						<div v-if="setting.type=='text'" class="setting">
+							<input v-bind:id="index" class="form-control" v-model="setting.value" v-bind:type="setting.type" v-bind:value="setting.value">
+						</div>
+						<!-- textarea field -->
+						<div v-if="setting.type=='textarea'" class="setting">
+							<textarea rows="4" v-bind:id="index" class="form-control">{{setting.value}}</textarea>
+						</div>
+						<!-- checkbox field -->
+						<div v-if="setting.type=='boolean'" class="setting">
+							<label>
+								<input type="checkbox" v-model="setting.value" :value="setting.value" :checked="setting.value">
+							</label>
+						</div>
+						<!-- select field -->
+						<div v-if="setting.type=='select'" class="setting">
+							<select class="form-control" v-model="setting.value">
+								<option v-for="val in setting.options" :value="val" class="form-control" :selected="setting.value==val">{{ val }}</option>
+							</select>
+						</div>
+						<!-- special: galleries field -->
+						<div v-if="setting.type=='galleries'" class="setting">
+							<select class="form-control" v-model="setting.value">
+								<option v-for="(gallery, index) in galleries" v-bind:value="gallery.id" class="form-control" :selected="setting.value==gallery.id">{{ gallery.name }}  -  /{{ gallery.id }}/</option>
+							</select>
+						</div>
+					</div>
+					
+				</div>
+			</div>
+		</div>
+	</template>
+	
+	<!--
+		admin galleries (tiles) template 
+	-->
+	<template id="admin-galleries-tiles">
+		<div id="msc-admin-galleries" class="settings admin-hidden">
+			
+			<div class="settings-wrapper">
+				<div class="header">
+					<h2>
+						<span v-if="typeof gallery.id === 'undefined'">Galleries <button type="button" class="btn btn-default btn-main btn-right btn-gallery-new">New Gallery</button>
+</span> 
+						<span v-else><a href="#galleries" @click="showGalleries()">&laquo;</a> {{gallery.name}} <button type="button" class="btn btn-default btn-main btn-right btn-add-images"><i class="glyphicon glyphicon-plus"></i> Add Images</button></span>	
+					</h2>
+				</div>
+				
+				<!-- galleries menu -->
+				<div class="gallery-tiles tile-container row" v-if="typeof gallery.id === 'undefined'">
+					<div class="gallery-tile tile-box col-md-3" v-for="(gallery_item, index) in galleries">
+						<div class="tile-image">
+							<a v-bind:href="'#galleries/'+gallery_item.id" @click="fetchGallery(gallery_item.id)">
+								<img v-bind:src="'../'+gallery_item.poster.filepath" alt="" class="admin-img-thumb img-responsive" />
+							</a>
+						</div>
+						<div class="tile-title">
+							<a v-bind:href="'#galleries/'+gallery_item.id" @click="fetchGallery(gallery_item.id);">
+								<p>{{ gallery_item.name }}</p>
+							</a>
+						</div>
+						<div class="tile-actions">
+							<!-- buttons -->
+							<button class="btn btn-right btn-danger"><i class="glyphicon glyphicon-trash"></i> <!--Delete--></button>
+							<button class="btn btn-right btn-primary"><i class="glyphicon glyphicon-pencil"></i> <!--Edit--></button>
+							<button class="btn btn-right btn-info"><i class="glyphicon glyphicon-check"></i> <!--Save--></button>
+						</div>
+					</div>
+				</div>
+				
+				<!-- photos menu -->
+				<div class="photo-tiles tile-container row" v-if="typeof gallery.id !== 'undefined'">
+					<div class="photo-tile tile-box col-md-3" v-for="(image, index) in photos" v-bind:class="{even:index%2==0}">
+						<div class="tile-image">
+							<a v-bind:href="'#galleries/'+gallery.id+'/'+image.file" @click="setImage(image)">
+								<img v-bind:src="'../galleries/'+gallery.id+'/'+image.file" alt="" class="admin-img-thumb img-responsive" />
+							</a>
+						</div>
+						<div class="tile-title">
+							<input type="text" v-bind:value="image.name" class="wide supertext no-border">
+							<span class="block grey break">galleries/{{gallery.id}}/{{image.file}}</span>
+						</div>
+						<div class="tile-actions">
+							<!-- buttons -->
+							<button class="btn btn-right btn-danger"><i class="glyphicon glyphicon-trash"></i> <!--Delete--></button>
+							<button class="btn btn-right btn-primary"><i class="glyphicon glyphicon-pencil"></i> <!--Edit--></button>
+							<button class="btn btn-right btn-info"><i class="glyphicon glyphicon-check"></i> <!--Save--></button>
+						</div>
+					</div>
+				</div>
+				
+			</div>
+		</div>
+	</template>
+	
+	
+	<!--
+		admin thumbnail template 
+	-->
+	<template id="admin-thumbnails">
+		<div id="msc-admin-thumbnails" class="settings admin-hidden">
+			
+			<div class="settings-wrapper">
+				<div class="header">
+					<h2>
+						Thumbnails <button type="button" class="btn btn-default btn-main btn-right btn-gallery-new" @click="getImages()">Create Thumbnails</button>	
+					</h2>
+				</div>
+				
+				<div class="photo-list list-container row">
+					<div class="list-item no-border col-md-12">
+						<div class="list-col no-padding">
+							<p class="alert alert-warning">Do not leave the page while the thumbnails are being created</p>
+						</div>
+					</div>
+				</div>
+				
+				<div v-if="image.file" class="photo-list list-container row">
+					<div class="list-item no-border col-md-12 thumbnail-show">
+						<div class="list-col no-padding">
+							<a class="list-image" href="#thumbnails" @click="setImage(image)">
+								<img v-bind:src="'../'+image.filepath" alt="" class="admin-img-thumb img-responsive" />
+							</a>
+							<div class="list-title">
+								<h4><span class="grey">Processing:</span> {{image.name}}</h4>
+								<p class="grey">{{image.filepath}}</p>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="photo-list list-container row">
+					<div class="list-item no-border col-md-12">
+						<div class="list-col no-padding">
+							<p class="alert" v-bind:class="[ message.status.type ? 'alert-'+message.status.type : 'alert-info' ]"><strong>Status:</strong> {{message.status.message}}</p>
+							<p class="grey hidden">{{message.status.type}}</p>
+							<template v-if="typeof message.response.responseText !== 'undefined'">
+								<p style="word-wrap:break-word"><span class="grey">Response:</span> {{message.response.responseText}}</p>
+							</template>
+						</div>
+					</div>
+				</div>
+				
+			</div>
+		</div>
+	</template>
+	
+	
+	<!--
+		admin galleries (list) template 
+	-->
+	<template id="admin-galleries">
+		<div id="msc-admin-galleries" class="settings admin-hidden">
+			
+			<div class="settings-wrapper">
+				<div class="header">
+					<h2>
+						<span v-if="typeof gallery.id === 'undefined'">Galleries <button type="button" class="btn btn-default btn-main btn-right btn-gallery-new">New Gallery</button>
+</span> 
+						<span v-else>
+							<a href="#galleries" @click="showGalleries()"><i class="glyphicon glyphicon-chevron-left"></i></a> {{gallery.name}} 
+							<button type="button" class="btn btn-default btn-main btn-right btn-add-images"><i class="glyphicon glyphicon-plus"></i> Add Images</button>
+							<button type="button" class="btn btn-default btn-main btn-right btn-add-images"><i class="glyphicon glyphicon-ok"></i> Save Names</button>
+						</span>	
+					</h2>
+				</div>
+				
+				<!-- galleries menu -->
+				<div class="gallery-list list-container row" v-if="typeof gallery.id === 'undefined'">
+					<div class="list-item col-md-12" v-for="(gallery_item, index) in galleries" v-bind:class="{even:index%2==0}">
+						<div class="list-col col-md-9">
+							<a v-bind:href="'#galleries/'+gallery_item.id" @click="fetchGallery(gallery_item.id)">
+<!-- 								<img class="list-image" v-bind:src="'../'+gallery_item.poster.filepath" alt="" class="admin-img-thumb img-responsive" /> -->
+								<h4 class="list-title">{{ gallery_item.name }}</h4>
+								<p>{{gallery_item.photos}} photo<span v-if="gallery_item.photos>1">s</span></p>
+							</a>
+						</div>
+						<div class="list-col col-md-3">
+							<div class="list-buttons right">
+								<!-- buttons -->
+								<button class="btn btn-main"><i class="glyphicon glyphicon-check"></i> <!--Save--></button>
+								<button class="btn btn-main"><i class="glyphicon glyphicon-pencil"></i> <!--Edit--></button>
+								<button class="btn btn-main"><i class="glyphicon glyphicon-trash"></i> <!--Delete--></button>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<!-- photos menu -->
+				<div class="photo-list list-container row" v-if="typeof gallery.id !== 'undefined'">
+					<div class="list-item col-md-12" v-if="gallery!=''" v-for="(image, index) in photos" v-bind:class="{even:index%2==0}">
+						<div class="list-col col-md-9">
+							<a class="list-image" v-bind:href="'#galleries/'+gallery.id+'/'+image.file" @click="setImage(image)">
+								<img v-bind:src="'../galleries/'+gallery.id+'/'+image.file" alt="" class="admin-img-thumb img-responsive" />
+							</a>
+							<div class="list-title">
+								<input type="text" v-bind:value="image.name" class="wide supertext no-border-">
+								<span class="block grey break">galleries/{{gallery.id}}/{{image.file}}</span>
+							</div>
+						</div>
+						<div class="list-col col-md-3">
+							<div class="list-buttons right">
+								<!-- buttons -->
+								<button class="btn btn-right btn-danger"><i class="glyphicon glyphicon-trash"></i> <!--Delete--></button>
+								<button class="btn btn-right btn-primary"><i class="glyphicon glyphicon-pencil"></i> <!--Edit--></button>
+								<button class="btn btn-right btn-info"><i class="glyphicon glyphicon-check"></i> <!--Save--></button>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+			</div>
+		</div>
+	</template>
+	
+	<!-- 
+		admin image viewer (template) 
+	-->
+	<template id="admin-image-viewer">
+		<transition appear name="fade" mode="out-in">
+			<div id="msc-viewer" class="viewer container-fluid" @click="clearImage()">
+				<div class="view-box">
+					<div class="close-box">
+						<a href="javascript:void(0)" @click="clearImage()">
+							<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Close
+						</a>
+					</div>
+					<!-- main image -->
+					<div class="image" v-if="image!==null">
+						<div class="image-box">
+							<div class="image-loader">
+								<p>Loading image</p>
+								<i class="glyphicon glyphicon-cog gi-spin"></i>
+								<span class="sr-only">Loading...</span>
+							</div>
+							<img id="viewer_image" class="-img-responsive -img-rounded" v-bind:src="'../'+image.filepath" v-bind:alt="image.name" @click.stop.prevent="javascript:void(0)">
+							<p class="caption">
+								<span class="text" @click.stop.prevent="javascript:void(0)">{{ image.name }} 
+								<span class="debug-hide">( {{ image.type }}: {{ image.img_w }} / {{ image.img_h }} )</span>
+							</p>
+						</div>	
+					</div>
+				</div>
+			</div>
+		</transition>
+	</template>
+	
+	
+	<!--
+		notification template 
+	-->
+	<template id="admin-message">
+		<transition name="swipe-down" mode="in-out">
+			<div id="msc-admin-message" class="message-box">
+				<div class="container">
+					<div class="row">
+						<div v-bind:class="'bg-'+msg.type" class="message bg-primary col-md-12">
+							<h4>{{msg.title}}</h4>
+							<p>{{msg.content}}</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</transition>
+	</template>
+	
+	
+	<!-- ////////////
+		 NOT USED 
+		 //////////// -->
+	
+	
+	
+	<!--
+		admin menu w/gallery submenu template 
+	-->
+	<template id="admin-menu-DEPRECATED">
+		<div id="msc-admin-menu" class="menu">
+			<ul class="admin-menu-list">
+				<li class="admin-menu-list-item">
+					<a href="#settings" v-bind:class="{selected:section=='settings'}" @click="showSection('settings');">Settings</a>
+				</li>
+				<li class="admin-menu-list-item">
+					<a href="#galleries" v-bind:class="{selected:section=='galleries'}" @click="showSection('galleries');">Galleries</a>
+					<template v-if="section=='galleries'">
+						<ul class="admin-submenu-list">
+							<!-- new gallery menu -->
+							<li class="admin-submenu-list-item">
+								<a href="#" @click="newGallery();" class="btn-round bg-light-pink"><i class="glyphicon glyphicon-plus"></i> New Gallery</a>
+							</li>
+							<!-- list of galleries -->
+							<li class="admin-submenu-list-item" v-for="(gallery_item, index) in galleries">
+								<a v-bind:href="'#galleries/'+gallery_item.id" v-bind:class="{selected:selected==gallery_item.id}" @click="fetchGallery(gallery_item.id);">{{ gallery_item.name }}</a>
+							</li>
+						</ul>
+					</template>
+				</li>
+			</ul>
+		</div>
+	</template>
+	
+	
+	<!-- CSS -->
+	<link rel="stylesheet" href="../lib/css/bootstrap.min.css">
+	<link rel="stylesheet" href="../lib/css/styles.css">
+	<link rel="stylesheet" href="../lib/css/queries.css">
+	
+	<!-- jquery -->
+	<script src="../lib/js/jquery-3.1.1.min.js" type="text/javascript"></script>
+	<!-- vue.js -->
+	<script src="../lib/js/vue.js" type="text/javascript"></script>
+	<script src="../lib/js/app-admsc.js" type="text/javascript"></script>
+	
+	
+</body>

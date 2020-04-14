@@ -1,0 +1,343 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+	<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+	<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+	<title>Welcome to minishowcase</title>
+</head>
+
+<body>
+	
+	<div id="msc">
+		
+		<div id="msc_header" class="container hidden">
+			<div class="title-gallery">
+				<h1>{{settings.gallery_title.value}}</h1>
+			</div>
+		</div>
+		
+		<!-- gallery -->
+		<gallery-showcase v-if="gallery" :settings="settings" :lang="lang" :gallery="gallery" :photos="photos"></gallery-showcase>
+		
+		<!-- galleries menu -->
+		<galleries-menu v-if="menu && !sidemenu" :settings="settings" :galleries="galleries" :gallery="gallery" :menu="menu" :sidemenu="sidemenu"></galleries-menu>
+		
+		<!-- galleries menu -->
+		<galleries-sidebar-menu v-if="menu && sidemenu" :settings="settings" :galleries="galleries" :gallery="gallery" :menu="menu" :sidemenu="sidemenu"></galleries-sidebar-menu>
+		
+		<!-- image viewer -->
+		<gallery-image-viewer :settings="settings" :image="image" :thumbs="thumbs" :viewer="viewer" :current="current" v-show="viewer"></image-viewer>
+		
+		<gallery-footer></gallery-footer>
+		
+		<gallery-message v-if="msg.type!==''" :msg="msg"></gallery-message>
+		
+		<gallery-debugger :settings="settings"></gallery-debugger>
+		
+	</div>
+	
+	<div class="main-loader">
+		<h1 class="loader-text">
+			<h1 class="loader-text">
+				<i class="glyphicon glyphicon-cog gi-spin"></i> Loading minishowcase...
+			</h1>
+		</h1>
+	</div>
+
+
+	<!--
+		***********************
+		templates 
+		*********************** 
+	-->
+	
+	<!--
+		galleries-menu template 
+	-->
+	<template id="galleries-menu">
+		<transition name="fade" mode="out-in">
+			<div id="msc-main-menu" class="menu-panel" v-bind:class="{'gallery-title':settings.gallery_title.value}" @click.self="closeMenu()">
+				<div class="container">
+					<h3 class="title">galleries
+						<a v-if="gallery.id" href="javascript:void(0)" @click="closeMenu()" class="close-button">
+							<span v-if="settings.show_icons.value" class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+							<template v-if="!settings.show_icons.value">Close</template>
+						</a>
+					</h3>
+					<div class="row">
+						<div class="menu-item col-lg-2 col-md-3 col-sm-4 col-xs-6" v-for="item in galleries" v-bind:class="{ squared : settings.square_images.value, rounded: settings.rounded_images.value }">
+							<a v-bind:id="'menu-'+item.id" class="menu-items" v-bind:class="{'selected':item.id==gallery.id}" v-bind:href="'#'+item.id" @click="setGallery(item.folder)">
+								<template v-if="item.poster.extension=='mp4'">
+									<img class="img-responsive" src="lib/images/video_bg_white-128x96.png" alt="video"/>
+								</template>
+								<template v-else>
+									<img class="img-responsive" v-bind:src="encodeURI(item.poster.filepath)" v-bind:alt="item.poster.filepath"/>
+								</template>
+								<h3>{{ item.name }}
+									<span>({{ item.photos }} items)</span>
+								</h3>
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</transition>
+	</template>
+	
+	<!--
+		galleries-sidebar-menu template 
+	-->
+	<template id="galleries-sidebar-menu">
+		<transition name="swipe-left" mode="out-in">
+			<div id="msc-sidebar-menu" class="menu-sidebar side container" @click.self="closeMenu()">
+				<h2 class="title">galleries
+					<a v-if="gallery.id" href="javascript:void(0)" @click="closeMenu()" class="close-button">
+						<span v-if="settings.show_icons.value" class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+						<template v-if="!settings.show_icons.value">Close</template>
+					</a>
+				</h2>
+				<div class="row menu-column">
+					<div class="menu-item col-lg-2 col-md-3 col-sm-4 col-xs-6" v-for="item in galleries">
+						<a v-bind:id="'menu-'+item.id" class="menu-items" v-bind:class="{ 'selected': item.id==gallery.id }" v-bind:href="'#'+item.id" @click="setGallery(item.folder)">
+							<img v-if="item.poster.thumb128" class="img-responsive" v-bind:src="'cache/'+gallery.id+'/'+item.poster.thumb128" v-bind:alt="item.poster.name"/>
+							<img v-else class="img-responsive" v-bind:src="'lib/php/image.php?th&img='+item.poster.filepath" v-bind:alt="item.poster.filepath"/>
+							<h3>{{ item.name }} 
+								<span>({{ item.photos }} photos)</span>
+							</h3>
+						</a>
+					</div>
+				</div>
+			</div>
+		</transition>
+	</template>
+	
+	
+	<!--
+		galleries-select-menu template 
+	-->
+	<template id="galleries-select-menu">
+		<div id="msc-select-menu" class="menu col-md-12">
+			<h2>Galleries
+			<select class="form-control form-inline" v-on:change="setSelectGallery($event)">
+				<option readonly>Select a gallery:</option>
+				<option v-for="gallery in galleries" v-bind:key="gallery.id" v-bind:name="gallery.id" v-bind:value="gallery.id">{{ gallery.name }}</option>
+			</select>
+			</h2>
+		</div>
+	</template>
+	
+	
+	<!--
+		gallery postloaded (template) 
+	-->
+	<template id="gallery-showcase">
+		<transition appear name="fade" mode="out-in">
+			<div class="container">
+				<div class="row">
+					<div id="msc-gallery" v-show="gallery.id" class="showcase col-md-12" v-bind:class="{ 'select':settings.use_select_menu.value, 'gallery-title':settings.gallery_title.value }">
+						<h1 class="title">{{ gallery.name }} <span v-if="gallery.name" class="hidden-">gallery</span>
+							<a href="javascript:void(0)" @click="openMenu()" class="open-button">
+								<span v-if="settings.show_icons.value" class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
+								<template v-if="!settings.show_icons.value">Menu</template>
+							</a>
+						</h1>
+						<div id="thumbs_gallery" class="gallery row">
+							<!-- <gallery-photo v-for="(image, index) in photos" v-show="photos" :image="image" :index="index" :settings="settings" :gallery="gallery" :photos="photos"></gallery-photo> -->
+							<template v-show="photos">
+								<template v-for="(image, index) in photos">
+									<!-- photo/video container -->
+									<div v-bind:class="'thumb-'+index" class="thumb-wrapper col-md-3 col-sm-6 col-xs-12">
+										<div class="thumb-box" v-bind:class="{ squared : settings.square_images.value, rounded: settings.rounded_images.value }">
+											<div class="thumb-loader">
+												<i class="glyphicon glyphicon-cog gi-spin gi-2x"></i>
+												<span class="sr-only">Loading...</span>
+											</div>
+											<a v-bind:href="'#'+image.gallery+'/'+index+'/'+image.file" @click="setImage(index)">
+												<div class="img-box">
+													<!-- video -->
+													<template v-if="image.extension=='mp4'">
+														<div class="video-overlay">
+															<img src="lib/images/video_bg_black-128x96.png" v-bind:alt="'Play video: '+image.filename" class="img-responsive">
+														</div>
+														<video>
+															<source v-bind:src="'galleries/'+encodeURI(image.gallery)+'/'+encodeURI(image.file)" type="video/mp4">
+														</video>
+														<p class="image-caption">{{image.name}} <span class="debug" v-bind:class="{'hidden':!settings.debug}">({{image.extension}})</span></p>
+													</template>
+													<!-- image -->
+													<template v-else>
+														<template v-if="settings.square_images.value">
+															<template v-if="image.thumb512">
+																<div class="square-bg" v-bind:style="'background-image:url(cache/'+encodeURI(image.gallery)+'/'+encodeURI(image.thumb512)+');'">
+																	<img class="thumb-img img-responsive img-hidden img-thumb512" v-bind:src="'cache/'+encodeURI(image.gallery)+'/'+encodeURI(image.thumb512)" v-bind:data-src="'cache/'+encodeURI(image.gallery)+'/'+encodeURI(image.thumb512)" v-bind:alt="image.name">
+																</div>
+															</template>
+															<template v-else>
+																<div class="square-bg" v-bind:style="'background-image:url(galleries/'+encodeURI(image.gallery)+'/'+encodeURI(image.file)+');'">
+																	<img class="thumb-img img-responsive img-hidden img-fullsize" v-bind:src="'galleries/'+encodeURI(image.gallery)+'/'+encodeURI(image.file)" v-bind:data-src="'galleries/'+encodeURI(image.gallery)+'/'+encodeURI(image.file)" v-bind:alt="image.name">
+																</div>
+															</template>
+														</template>
+														<template v-else>
+															<template v-if="image.thumb512">
+																<img class="thumb-img img-responsive img-thumb512" v-bind:src="'cache/'+encodeURI(image.gallery)+'/'+encodeURI(image.thumb512)" v-bind:data-src="'cache/'+encodeURI(image.gallery)+'/'+encodeURI(image.thumb512)" v-bind:alt="image.name">
+															</template>
+															<template v-else>
+																<img class="thumb-img img-responsive img-fullsize" v-bind:src="'galleries/'+encodeURI(image.gallery)+'/'+encodeURI(image.file)" v-bind:data-src="'galleries/'+encodeURI(image.gallery)+'/'+encodeURI(image.file)" v-bind:alt="image.name">
+															</template>
+														</template>
+														<p class="image-caption">{{image.name}} <span class="debug" v-bind:class="{'hidden':!settings.debug}">({{image.extension}} / 512:{{image.thumb512}}, 256:{{image.thumb256}}, 128:{{image.thumb128}})</span></p>
+													</template>
+												</div>
+											</a>
+										</div>
+									</div>
+									<hr class="divider-2" v-if="(index+1)%2==0 && settings.square_images.value">
+									<hr class="divider-3" v-if="(index+1)%3==0 && settings.square_images.value">
+									<hr class="divider-4" v-if="(index+1)%4==0 && settings.square_images.value">
+									<hr class="divider-6" v-if="(index+1)%6==0 && settings.square_images.value">
+
+								</template>
+							</template>
+							<!-- gallery loader -->
+							<div class="gallery-loader hidden">
+								<i class="glyphicon glyphicon-cog gi-spin"></i> <span>Loading gallery</span>
+								<span class="sr-only">Loading gallery</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</transition>
+	</template>
+	
+	
+	<!-- 
+		image viewer (template) 
+	-->
+	<template id="gallery-image-viewer">
+		<transition appear name="fade" mode="out-in">
+			<div id="msc-viewer" class="viewer container-fluid" @click="clearImage()">
+				<div class="view-box">
+					<div class="close-box">
+						<a href="javascript:void(0)" @click="clearImage()">
+							<span v-if="settings.show_icons.value" class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+							<template v-if="!settings.show_icons.value">Close</template>
+						</a>
+					</div>
+					<!-- prev image -->
+					<div class="nav-left">
+						<a id="thumbnail-box-prev" @click.stop.prevent="setImage(thumbs.prev.index)" v-bind:href="'#'+thumbs.prev.gallery+'/'+thumbs.prev.index+'/'+thumbs.prev.file">
+<!--
+							<img v-if="thumbs.prev.thumb128" id="thumbnail-img-prev" class="img-responsive center-block hidden" v-bind:src="thumbs.prev.thumb128" v-bind:alt="thumbs.prev.name">
+							<img v-else id="thumbnail-img-prev" class="img-responsive center-block hidden" v-bind:src="thumbs.prev.filepath" v-bind:alt="thumbs.prev.name">
+-->
+							<span class="glyphicon glyphicon-menu-left" aria-hidden="true"></span>
+						</a>
+					</div>
+					<!-- main image -->
+					<div class="image" v-if="image!==null">
+						<div class="image-box" v-bind:class="{ squared : settings.square_images.value, rounded: settings.rounded_images.value }">
+							<div v-if="typeof image.filepath == 'undefined'" id="viewer_image_loader" class="image-loader">
+								<p>Loading image</p>
+								<i class="glyphicon glyphicon-cog gi-spin"></i>
+								<span class="sr-only">Loading...</span>
+							</div>
+							<template v-if="image.extension=='mp4'">
+								<video id="viewer_image" @click.stop.prevent="playVideo()" controls>
+									<source v-bind:src="'galleries/'+encodeURI(image.gallery)+'/'+encodeURI(image.file)" type="video/mp4">
+								</video>
+								<div class="video-overlay hidden">
+									<a href="javascript:void(0)" @click.stop.prevent="playVideo()"><img src="lib/images/video_bg_black-128x96.png" v-bind:alt="'Play '+image.name" class="img-responsive">
+								</div>
+							</template>
+							<template v-if="image.extension!=='mp4'">
+								<img v-if="settings.scale_images" id="viewer_image" class="-img-responsive -img-rounded" v-bind:src="'lib/php/image.php?img='+image.filepath" v-bind:alt="image.name" @click.stop.prevent="javascript:void(0)">
+								<img v-else id="viewer_image" class="-img-responsive -img-rounded" v-bind:src="image.filepath" v-bind:alt="image.name" @click.stop.prevent="javascript:void(0)">
+							</template>
+							<p class="caption">
+								<span class="text" @click.stop.prevent="javascript:void(0)">{{ image.name }} 
+								<span class="debug" v-bind:class="{'hidden':!settings.debug}">( {{ image.type }}: {{ image.img_w }} / {{ image.img_h }} )</span>
+							</p>
+						</div>	
+					</div>
+					<!-- next image -->
+					<div class="nav-right">
+						<a id="thumbnail-box-next" @click.stop.prevent="setImage(thumbs.next.index)" v-bind:href="'#'+thumbs.next.gallery+'/'+thumbs.next.index+'/'+thumbs.next.file">
+<!--
+							<img v-if="thumbs.next.thumb128" id="thumbnail-img-next" class="img-responsive center-block img-256" v-bind:src="thumbs.next.thumb128" v-bind:alt="thumbs.next.name">
+							<img v-else id="thumbnail-img-next" class="img-responsive center-block img-fullsize" v-bind:src="thumbs.next.filepath" v-bind:alt="thumbs.next.name">
+-->
+							<span class="glyphicon glyphicon-menu-right" aria-hidden="true"></span>
+						</a>
+					</div>
+				</div>
+			</div>
+		</transition>
+	</template>
+	
+	
+	<!--
+		notification template 
+	-->
+	<template id="admin-message">
+		<transition name="swipe-down" mode="in-out">
+			<div id="msc-admin-message" class="message-box">
+				<div class="container">
+					<div class="row">
+						<div v-bind:class="'bg-'+msg.type" class="message bg-primary col-md-12">
+							<h4>{{msg.title}}</h4>
+							<p>{{msg.content}}</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</transition>
+	</template>
+	
+	
+	<!--
+		debugger template
+	-->
+	<template id="gallery-debugger">
+		<!-- debugger -->
+		<div id="msc-debug" class="debug" v-if="debug.message">
+			<div class="bug-box">{{debug.message}}</div>
+			<div class="row bug-drawer bug-drawer-closed"></div>
+		</div>
+	</template>
+	
+	
+	<!-- 
+		footer 
+	-->
+	<template id="gallery-footer">
+		<div class="container">
+			<div id="msc-footer" class="footer">
+				<p>Copyright &copy; 2017 minishowcase. All rights reserved.</p>
+			</div>
+		</div>
+	</template>
+	
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="lib/css/bootstrap.min.css">
+	<link rel="stylesheet" href="lib/css/styles.css">
+	<link rel="stylesheet" href="lib/css/queries.css">
+
+	<!-- jquery -->
+	<script src="lib/js/jquery-3.1.1.min.js" type="text/javascript"></script>
+	<!-- masonry -->
+	<script src="lib/js/masonry.pkgd.min.js" type="text/javascript"></script>
+	<script src="lib/js/imagesloaded.pkgd.min.js" type="text/javascript"></script>
+	<!-- lodash -->
+	<!-- <script src="lib/js/lodash.js" type="text/javascript"></script> -->
+	<!-- vue.js -->
+	<script src="lib/js/vue.js" type="text/javascript"></script>
+	<script src="lib/js/app-msc.js" type="text/javascript"></script>
+
+</body>
+</html>

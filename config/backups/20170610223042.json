@@ -1,0 +1,195 @@
+{
+	"gallery_debug": {
+		"status": "active",
+		"name": "gallery_debug",
+		"desc": "Description_goes_here",
+		"type": "boolean",
+		"value": true
+	},
+	"use_select_menu": {
+		"status": "active",
+		"name": "use_select_menu",
+		"desc": "Description_goes_here",
+		"type": "boolean",
+		"value": false
+	},
+	"use_side_menu": {
+		"status": "active",
+		"name": "use_side_menu",
+		"desc": "Description_goes_here",
+		"type": "boolean",
+		"value": false
+	},
+	"show_icons": {
+		"status": "active",
+		"name": "show_icons",
+		"desc": "Description_goes_here",
+		"type": "boolean",
+		"value": false
+	},
+	"set_language": {
+		"status": "active",
+		"name": "set_language",
+		"desc": "Description_goes_here",
+		"type": "select",
+		"value": "en",
+		"options": [
+			"auto",
+			"en",
+			"es",
+			"ro",
+			"fr",
+			"po",
+			"jp",
+			"cr",
+			"it"
+		]
+	},
+	"use_theme": {
+		"status": "active",
+		"name": "use_theme",
+		"desc": "Description_goes_here",
+		"type": "select",
+		"value": "dark",
+		"options": [
+			"dark",
+			"blue",
+			"default"
+		]
+	},
+	"square_thumbnails": {
+		"status": "active",
+		"name": "square_thumbnails",
+		"desc": "Description_goes_here",
+		"type": "boolean",
+		"value": false
+	},
+	"max_thumbnails": {
+		"status": "inactive",
+		"name": "max_thumbnails",
+		"desc": "Description_goes_here",
+		"type": "hidden",
+		"value": "6"
+	},
+	"thumbnail_quality": {
+		"status": "active",
+		"name": "thumbnail_quality",
+		"desc": "Quality of thumbnail represented as percentage of compression",
+		"type": "select",
+		"value": 70,
+		"options": [
+			5,
+			10,
+			15,
+			20,
+			25,
+			30,
+			35,
+			40,
+			45,
+			50,
+			55,
+			60,
+			65,
+			70,
+			75,
+			80,
+			85,
+			90,
+			95,
+			100
+		]
+	},
+	"large_image_quality": {
+		"status": "active",
+		"name": "large_image_quality",
+		"desc": "Quality of images represented as percentage of image compression",
+		"type": "select",
+		"value": 80,
+		"options": [
+			5,
+			10,
+			15,
+			20,
+			25,
+			30,
+			35,
+			40,
+			45,
+			50,
+			55,
+			60,
+			65,
+			70,
+			75,
+			80,
+			85,
+			90,
+			95,
+			100
+		]
+	},
+	"gallery_title": {
+		"status": "active",
+		"name": "gallery_title",
+		"desc": "Description_goes_here",
+		"type": "text",
+		"value": "minishowcase | gallery"
+	},
+	"gallery_default": {
+		"status": "active",
+		"name": "Default Gallery",
+		"desc": "Gallery to be selected by default.",
+		"type": "galleries",
+		"value": ""
+	},
+	"gallery_footer": {
+		"status": "inactive",
+		"name": "Gallery Footer",
+		"desc": "Content of the footer. Accepts basic html.",
+		"type": "textarea",
+		"value": "Powered by <a href=\"http://minishowcase.net\" target=\"_blank\">minishowcase</a>"
+	},
+	"gallery_name_prepend": {
+		"status": "active",
+		"name": "Prepend to Gallery Name",
+		"desc": "Text to be added before the gallery name",
+		"type": "text",
+		"value": "my"
+	},
+	"gallery_name_append": {
+		"status": "active",
+		"name": "Append to Gallery Name",
+		"desc": "Text to be added after the gallery name",
+		"type": "text",
+		"value": "pictures"
+	},
+	"show_thumb_name": {
+		"status": "inactive",
+		"name": "Show thumbnail name",
+		"desc": "Description_goes_here",
+		"type": "hidden",
+		"value": true
+	},
+	"slideshow_seconds": {
+		"status": "hidden",
+		"name": "Slideshow Seconds",
+		"desc": "Time between slides for the slideshow (in seconds)",
+		"type": "text",
+		"value": 10
+	},
+	"hidden_files": {
+		"status": "hidden",
+		"name": "hidden_files",
+		"desc": "List of filenames to be ignored in gallery folders. Separate filenames with a comma (,)",
+		"type": "textarea",
+		"value": "Thumbs.db, .DS_Store"
+	},
+	"allowed_extensions": {
+		"status": "hidden",
+		"name": "Allowed Extensions",
+		"desc": "Image extensions to be allowed for gallery images. Separate with a comma (,)",
+		"type": "textarea",
+		"value": "jpg, jpeg, png, gif"
+	}
+}
